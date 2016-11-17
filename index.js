@@ -1,23 +1,11 @@
 const Promise = require('bluebird');
-const urls = require('./urls.js').urls;
+const urls = require('./data/urls.js').urls;
 const fs = require('fs');
 
 const urlsFi = urls.map((url) => url+'.fi' );
-// BLUEBIRD SAMPLE
-/*
-var files = [];
-for (var i = 0; i < 100; ++i) {
-    files.push(fs.writeFileAsync("file-" + i + ".txt", "", "utf-8"));
-}
-Promise.all(files).then(function() {
-    console.log("all the files were created");
-});
-*/
-// end bluebird
 
 
 const doWhois = (url) => {
-
     const spawn = require('child_process').spawn;
     const whois = spawn('whois', [url]);
 
@@ -36,31 +24,26 @@ const doWhois = (url) => {
     });
 };
 
-/*
- * sample single call which works
- doWhois('omisdfsdd.fi')
- .then((url) => {
- sitesAvailable.push(url);
- console.log(sitesAvailable);
- });
- */
 const askAllUrls = (allUrls) => {
     const successArray = [];
-    // global array of successful domain seraches
     const domainsArray = [];
 
     return new Promise((resolve) => {
         allUrls.forEach((url) => {
-            // console.log('we are in forEach', url);
             successArray.push(doWhois(url)
-                .then((url) => domainsArray.push(url)).catch(() => { } ));
+                .then((url) => domainsArray.push(url))
+                .catch(() => { } ));
         });
-        Promise.all(successArray).then(() => {
-            resolve(domainsArray);
-        })
+
+        Promise.all(successArray)
+            .then(() => { resolve(domainsArray); })
             .catch((err)=>(console.log(err)));
     });
 };
-askAllUrls(urlsFi).then((allUrls) => { console.log('domains not registered: ', allUrls.length);
-    fs.writeFile('test.json', JSON.stringify(allUrls));
+
+askAllUrls(urlsFi)
+    .then((allUrls) => {
+        console.log('domains not registered: ', allUrls.length);
+        const fileName = 'output/' + Date.now() + '.js';
+        fs.writeFile(fileName, JSON.stringify(allUrls));
 });
